@@ -26,17 +26,80 @@ Example:
 
 """
 from celery import Celery
-from vlab_api_common import get_logger
-from vlab_inf_common.vmware import vCenter
+from celery.utils.log import get_task_logger
+from vlab_inf_common.vmware import vCenter, virtual_machine, vim
 
 from vlab_power_api.lib import const
 
 app = Celery('power', backend='rpc://', broker=const.VLAB_MESSAGE_BROKER)
-logger = get_logger(__name__, loglevel=const.VLAB_POWER_LOG_LEVEL)
+logger = get_task_logger(__name__)
+logger.setLevel(const.VLAB_POWER_LOG_LEVEL.upper())
 
 
 @app.task(name='power.modify')
-def modify(username, power, machine):
-    """TODO"""
-    resp = {'content' : {}, 'error' : None, 'params' : {'power': power, 'machine': machine}}
-    # TODO change the thingies
+def modify(username, power_state, machine):
+    """Celery task for changing the power state of Virtual Machine(s)
+
+    :Returns: Dictionary
+
+    :param username: The name of the user who owns the supplied VM(s)
+    :type username: String
+
+    :param power_state: The desired power state for the supplied VM(s)
+    :type power_state: String
+
+    :param machine: The name of the VM(s) to power on/off/restart
+    :type machine: String
+    """
+    resp = {'content' : {}, 'error' : None, 'params' : {'power': power_state, 'machine': machine}}
+    logger.info('Task Starting')
+    try:
+        modify_power(username, power_state, machine)
+    except ValueError as doh:
+        err = '{}'.format(doh)
+        logger.info('Task Failure: {}'.format(err))
+        resp['error'] = '{}'.format(err)
+    logger.info('Task Completed')
+    return resp
+
+
+def modify_power(username, power_state, machine):
+    """Keeps business logic out of Celery task
+
+    :Returns: None
+
+    :Raises: ValueError, RuntimeError
+
+    :param username: The name of the user who owns the supplied VM(s)
+    :type username: String
+
+    :param power_state: The desired power state for the supplied VM(s)
+    :type power_state: String
+
+    :param machine: The name of the VM(s) to power on/off/restart
+    :type machine: String
+    """
+    with vCenter(host=const.INF_VCENTER_SERVER, user=const.INF_VCENTER_USER, \
+                 password=const.INF_VCENTER_PASSWORD) as vcenter:
+        folder = vcenter.get_by_name(name=username, vimtype=vim.Folder)
+        vms = [x for x in folder.childEntity]
+
+        logger.debug('All user VMS: {}'.format(','.join([x.name for x in vms])))
+        if machine.lower() != 'all':
+            vms = [x for x in vms if x.name == machine]
+        if not vms:
+            error = 'No machine named {} found'.format(machine)
+            raise ValueError(error)
+
+        errors = []
+        debug_msg = 'VM(s) getting power state adjusted to {}: {}'.format(','.join([x.name for x in vms]),
+                                                                          power_state)
+        logger.debug(debug_msg)
+        for vm in vms:
+            ok = virtual_machine.power(vm, power_state)
+            if not ok:
+                msg = 'Unable to power {} {}'.format(power_state, vm.name)
+                errors.append(msg)
+        if errors:
+            msg = ', '.join(errors)
+            raise RuntimeError(msg)

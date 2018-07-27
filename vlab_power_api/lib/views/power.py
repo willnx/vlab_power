@@ -2,9 +2,12 @@
 """
 This module defines the API for working with auth tokens in vLab.
 """
+import ujson
+from flask import current_app
 from flask_classy import request
+from vlab_inf_common.views import TaskView
 from vlab_inf_common.vmware import vCenter, vim
-from vlab_api_common import BaseView, describe, get_logger, requires, validate_input
+from vlab_api_common import describe, get_logger, requires, validate_input
 
 
 from vlab_power_api.lib import const
@@ -13,7 +16,7 @@ from vlab_power_api.lib import const
 logger = get_logger(__name__, loglevel=const.VLAB_POWER_LOG_LEVEL)
 
 
-class PowerView(BaseView):
+class PowerView(TaskView):
     """API end point for turning on, off, or restarting virtual machines"""
     route_base = '/api/1/inf/power'
     GET_SCHEMA = {"$schema": "http://json-schema.org/draft-04/schema#",
@@ -23,7 +26,11 @@ class PowerView(BaseView):
                    "type": "object",
                    "properties": {
                       "power" : {
-                         "type": "enum",
+                         "oneOf": [
+                            {"type": "string", "pattern": "on"},
+                            {"type": "string", "pattern": "off"},
+                            {"type": "string", "pattern": "restart"}
+                         ],
                          "description": "Power on, off, or restart a virtual machine"
                        },
                        "machine" : {
@@ -32,24 +39,27 @@ class PowerView(BaseView):
                        }
                    },
                    "required": [
-                      "power"
+                      "power",
+                      "machine"
                    ]
                  }
 
     @describe(post=POST_SCHEMA)
-    def get(self):
-        """Only here to support the descript parameter"""
-        resp = {'user' : username}
-        status = 200
+    @requires(verify=False)
+    def get(self, *args, **kwargs):
+        """Only here to support the describe parameter"""
+        username = kwargs['token']['username']
+        resp = {'user' : username, 'error': "End point only supports the user of the describe parameter"}
+        status = 400
         return ujson.dumps(resp), status
 
-    @requires(verify=True)
+    @requires(verify=False)
     @validate_input(schema=POST_SCHEMA)
     def post(self, *args, **kwargs):
         """Change the power state of a given virtual machine"""
         username = kwargs['token']['username']
         resp = {"user" : username}
-        machine = kwargs['body']['virtual-machine']
+        machine = kwargs['body']['machine']
         power = kwargs['body']['power']
         task = current_app.celery_app.send_task('power.modify', [username, power, machine])
         resp['content'] = {'task-id': task.id}
