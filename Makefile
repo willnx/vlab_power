@@ -19,8 +19,8 @@ test: uninstall install
 	cd tests && nosetests -v --with-coverage --cover-package=vlab_power_api
 
 images: build
-	sudo docker build -f ApiDockerfile -t willnx/vlab-power-api .
-	sudo docker build -f WorkerDockerfile -t willnx/vlab-power-worker .
+	docker build -f ApiDockerfile -t willnx/vlab-power-api .
+	docker build -f WorkerDockerfile -t willnx/vlab-power-worker .
 
 up:
 	docker-compose -p vlabPower up --abort-on-container-exit
