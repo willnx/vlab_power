@@ -15,9 +15,9 @@ services:
     volumes:
       - ./vlab_power_api:/usr/lib/python3.6/site-packages/vlab_power_api
     environment:
-      - INF_VCENTER_SERVER=virtlab.igs.corp
-      - INF_VCENTER_USER=Administrator@vsphere.local
-      - INF_VCENTER_PASSWORD=1.Password
+      - INF_VCENTER_SERVER=ChangeME
+      - INF_VCENTER_USER=ChangeME
+      - INF_VCENTER_PASSWORD=ChangeME
       - INF_VCENTER_TOP_LVL_DIR=/vlab
 
   power-broker:

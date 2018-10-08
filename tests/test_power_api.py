@@ -50,6 +50,17 @@ class TestPowerView(unittest.TestCase):
 
         self.assertEqual(result, expected)
 
+    def test_post_task_link(self):
+        """POST on /api/1/inf/power sets the Link header"""
+        resp = self.app.post('/api/1/inf/power',
+                             headers={'X-Auth': self.token},
+                             json={'power': "on", "machine": "my VM"})
+
+        task_id = resp.headers['Link']
+        expected = '<https://localhost/api/1/inf/power/task/asdf-asdf-asdf>; rel=status'
+
+        self.assertEqual(task_id, expected)
+
 
 if __name__ == '__main__':
     unittest.main()
