@@ -4,7 +4,7 @@ This module defines the API for working with auth tokens in vLab.
 """
 import ujson
 from flask import current_app
-from flask_classy import request
+from flask_classy import request, Response
 from vlab_inf_common.views import TaskView
 from vlab_inf_common.vmware import vCenter, vim
 from vlab_api_common import describe, get_logger, requires, validate_input
@@ -58,9 +58,12 @@ class PowerView(TaskView):
     def post(self, *args, **kwargs):
         """Change the power state of a given virtual machine"""
         username = kwargs['token']['username']
-        resp = {"user" : username}
+        resp_data = {"user" : username}
         machine = kwargs['body']['machine']
         power = kwargs['body']['power']
         task = current_app.celery_app.send_task('power.modify', [username, power, machine])
-        resp['content'] = {'task-id': task.id}
-        return ujson.dumps(resp), 200
+        resp_data['content'] = {'task-id': task.id}
+        resp = Response(ujson.dumps(resp_data))
+        resp.status_code = 202
+        resp.headers.add('Link', '<{0}{1}/task/{2}>; rel=status'.format(const.VLAB_URL, self.route_base, task.id))
+        return resp
