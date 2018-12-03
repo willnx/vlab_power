@@ -61,6 +61,7 @@ class PowerView(TaskView):
         resp_data = {"user" : username}
         machine = kwargs['body']['machine']
         power = kwargs['body']['power']
+        txn_id = request.headers.get('X-REQUEST-ID', 'noId')
         task = current_app.celery_app.send_task('power.modify', [username, power, machine])
         resp_data['content'] = {'task-id': task.id}
         resp = Response(ujson.dumps(resp_data))

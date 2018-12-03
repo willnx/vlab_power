@@ -26,18 +26,16 @@ Example:
 
 """
 from celery import Celery
-from celery.utils.log import get_task_logger
+from vlab_api_common import get_task_logger
 from vlab_inf_common.vmware import vCenter, virtual_machine, vim
 
 from vlab_power_api.lib import const
 
 app = Celery('power', backend='rpc://', broker=const.VLAB_MESSAGE_BROKER)
-logger = get_task_logger(__name__)
-logger.setLevel(const.VLAB_POWER_LOG_LEVEL.upper())
 
 
-@app.task(name='power.modify')
-def modify(username, power_state, machine):
+@app.task(name='power.modify', bind=True)
+def modify(self, username, power_state, machine, txn_id):
     """Celery task for changing the power state of Virtual Machine(s)
 
     :Returns: Dictionary
@@ -50,11 +48,15 @@ def modify(username, power_state, machine):
 
     :param machine: The name of the VM(s) to power on/off/restart
     :type machine: String
+
+    :param txn_id: A unique string supplied by the client to track the call through logs
+    :type txn_id: String
     """
+    logger = get_task_logger(txn_id=txn_id, task_id=self.request.id, loglevel=const.VLAB_POWER_LOG_LEVEL.upper())
     resp = {'content' : {}, 'error' : None, 'params' : {'power': power_state, 'machine': machine}}
     logger.info('Task Starting')
     try:
-        modify_power(username, power_state, machine)
+        modify_power(username, power_state, machine, logger)
     except ValueError as doh:
         err = '{}'.format(doh)
         logger.info('Task Failure: {}'.format(err))
@@ -63,7 +65,7 @@ def modify(username, power_state, machine):
     return resp
 
 
-def modify_power(username, power_state, machine):
+def modify_power(username, power_state, machine, logger):
     """Keeps business logic out of Celery task
 
     :Returns: None
@@ -78,6 +80,9 @@ def modify_power(username, power_state, machine):
 
     :param machine: The name of the VM(s) to power on/off/restart
     :type machine: String
+
+    :param logger: An object for logging messages
+    :type logger: logging.LoggerAdapter
     """
     with vCenter(host=const.INF_VCENTER_SERVER, user=const.INF_VCENTER_USER, \
                  password=const.INF_VCENTER_PASSWORD) as vcenter:
