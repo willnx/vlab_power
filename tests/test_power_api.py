@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 
 from flask import Flask
-from vlab_api_common.http_auth import generate_test_token
+from vlab_api_common.http_auth import generate_v2_test_token
 
 import vlab_power_api.app as power_app
 from vlab_power_api.lib.views import power
@@ -18,7 +18,7 @@ class TestPowerView(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Runs once, before any test case"""
-        cls.token = generate_test_token()
+        cls.token = generate_v2_test_token(username='bob')
 
     @classmethod
     def setUp(cls):

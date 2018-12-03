@@ -45,7 +45,7 @@ class PowerView(TaskView):
                  }
 
     @describe(post=POST_SCHEMA)
-    @requires(verify=False, version=(1,2))
+    @requires(verify=False, version=2)
     def get(self, *args, **kwargs):
         """Only here to support the describe parameter"""
         username = kwargs['token']['username']
@@ -53,7 +53,7 @@ class PowerView(TaskView):
         status = 400
         return ujson.dumps(resp), status
 
-    @requires(verify=False, version=(1,2))
+    @requires(verify=const.VLAB_VERIFY_TOKEN, version=2)
     @validate_input(schema=POST_SCHEMA)
     def post(self, *args, **kwargs):
         """Change the power state of a given virtual machine"""
@@ -61,6 +61,7 @@ class PowerView(TaskView):
         resp_data = {"user" : username}
         machine = kwargs['body']['machine']
         power = kwargs['body']['power']
+        txn_id = request.headers.get('X-REQUEST-ID', 'noId')
         task = current_app.celery_app.send_task('power.modify', [username, power, machine])
         resp_data['content'] = {'task-id': task.id}
         resp = Response(ujson.dumps(resp_data))

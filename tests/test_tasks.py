@@ -16,7 +16,8 @@ class TestTasks(unittest.TestCase):
         """``modify`` returns a dictionary when everything works as expected"""
         result = tasks.modify(username='alice',
                               power_state='on',
-                              machine='myVM')
+                              machine='myVM',
+                              txn_id='myID')
         expected = {'content': {}, 'error': None, 'params': {'machine': 'myVM', 'power': 'on'}}
 
         self.assertEqual(result, expected)
@@ -27,7 +28,8 @@ class TestTasks(unittest.TestCase):
         fake_modify_power.side_effect = [ValueError('testing')]
         result = tasks.modify(username='alice',
                               power_state='on',
-                              machine='myVM')
+                              machine='myVM',
+                              txn_id='myID')
         expected = {'content': {}, 'error': 'testing', 'params': {'machine': 'myVM', 'power': 'on'}}
 
         self.assertEqual(result, expected)
@@ -36,6 +38,7 @@ class TestTasks(unittest.TestCase):
     @patch.object(tasks, 'vCenter')
     def test_modify_power(self, fake_vCenter, fake_power):
         """``modify_power`` returns None when everything works as expected"""
+        fake_logger = MagicMock()
         fake_vm = MagicMock()
         fake_vm.name = 'myVM'
         fake_folder = MagicMock()
@@ -44,7 +47,8 @@ class TestTasks(unittest.TestCase):
 
         output = tasks.modify_power(username='alice',
                                     power_state='on',
-                                    machine='myVM')
+                                    machine='myVM',
+                                    logger=fake_logger)
         expected = None
 
         self.assertEqual(output, expected)
@@ -53,6 +57,7 @@ class TestTasks(unittest.TestCase):
     @patch.object(tasks, 'vCenter')
     def test_modify_power_no_vms(self, fake_vCenter, fake_power):
         """``modify_power`` raises ValueError if no VMs are found"""
+        fake_logger = MagicMock()
         fake_vm = MagicMock()
         fake_vm.name = 'myVM'
         fake_folder = MagicMock()
@@ -62,12 +67,14 @@ class TestTasks(unittest.TestCase):
         with self.assertRaises(ValueError):
             tasks.modify_power(username='alice',
                                power_state='on',
-                               machine='NoVMs')
+                               machine='NoVMs',
+                               logger=fake_logger)
 
     @patch.object(tasks.virtual_machine, 'power')
     @patch.object(tasks, 'vCenter')
     def test_modify_power_failure(self, fake_vCenter, fake_power):
         """``modify_power`` raises RuntimeError if changing the power state fails"""
+        fake_logger = MagicMock()
         fake_vm = MagicMock()
         fake_vm.name = 'myVM'
         fake_folder = MagicMock()
@@ -78,7 +85,8 @@ class TestTasks(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             tasks.modify_power(username='alice',
                                power_state='on',
-                               machine='myVM')
+                               machine='myVM',
+                               logger=fake_logger)
 
 if __name__ == '__main__':
     unittest.main()
