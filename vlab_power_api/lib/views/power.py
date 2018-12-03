@@ -45,7 +45,7 @@ class PowerView(TaskView):
                  }
 
     @describe(post=POST_SCHEMA)
-    @requires(verify=False, version=(1,2))
+    @requires(verify=False, version=2)
     def get(self, *args, **kwargs):
         """Only here to support the describe parameter"""
         username = kwargs['token']['username']
@@ -53,7 +53,7 @@ class PowerView(TaskView):
         status = 400
         return ujson.dumps(resp), status
 
-    @requires(verify=False, version=(1,2))
+    @requires(verify=const.VLAB_VERIFY_TOKEN, version=2)
     @validate_input(schema=POST_SCHEMA)
     def post(self, *args, **kwargs):
         """Change the power state of a given virtual machine"""
