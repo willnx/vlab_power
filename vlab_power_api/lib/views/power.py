@@ -62,7 +62,7 @@ class PowerView(TaskView):
         machine = kwargs['body']['machine']
         power = kwargs['body']['power']
         txn_id = request.headers.get('X-REQUEST-ID', 'noId')
-        task = current_app.celery_app.send_task('power.modify', [username, power, machine])
+        task = current_app.celery_app.send_task('power.modify', [username, power, machine, txn_id])
         resp_data['content'] = {'task-id': task.id}
         resp = Response(ujson.dumps(resp_data))
         resp.status_code = 202
