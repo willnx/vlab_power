@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 setup(name="vlab-power-api",
       author="Nicholas Willhite,",
       author_email='willnx84@gmail.com',
-      version='2019.06.18',
+      version='2019.06.19',
       packages=find_packages(),
       include_package_data=True,
       package_files={'vlab_folder_api' : ['app.ini']},
