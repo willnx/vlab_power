@@ -1,3 +1,8 @@
+.. image:: https://travis-ci.org/willnx/vlab_power.svg?branch=master
+    :target: https://travis-ci.org/willnx/vlab_power
+
+.. _inventory
+
 ##############
 vLab Power API
 ##############
