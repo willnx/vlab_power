@@ -6,14 +6,14 @@ services:
     image:
       willnx/vlab-power-api
     volumes:
-      - ./vlab_power_api:/usr/lib/python3.6/site-packages/vlab_power_api
+      - ./vlab_power_api:/usr/lib/python3.8/site-packages/vlab_power_api
     command: ["python3", "app.py"]
 
   power-worker:
     image:
       willnx/vlab-power-worker
     volumes:
-      - ./vlab_power_api:/usr/lib/python3.6/site-packages/vlab_power_api
+      - ./vlab_power_api:/usr/lib/python3.8/site-packages/vlab_power_api
     environment:
       - INF_VCENTER_SERVER=ChangeME
       - INF_VCENTER_USER=ChangeME
